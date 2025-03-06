@@ -797,7 +797,68 @@ const sentences = [
     sentence: "Did you know that Jane is going to make a party on Friday?",
     errorWord: "make",
     correctAnswer: "have"
+  },
+  { 
+    sentence: "There’s plenty more soap if you’re still hungry.", 
+    errorWord: "soap", 
+    correctAnswer: "soup"
+  },
+  { 
+    sentence: "We knew each other in 1996.", 
+    errorWord: "knew", 
+    correctAnswer: "met"
+  },
+  { 
+    sentence: "I lived in Japan during three years.", 
+    errorWord: "during", 
+    correctAnswer: "for"
+  },
+  { 
+    sentence: "I have two brothers, María and Juan.", 
+    errorWord: "brothers", 
+    correctAnswer: "siblings"
+  },
+  { 
+    sentence: "Jane works very hardly. She’s a workaholic.", 
+    errorWord: "hardly", 
+    correctAnswer: "hard"
+  },
+  { 
+    sentence: "Our teacher puts us too much homework.", 
+    errorWord: "puts", 
+    correctAnswer: ["gives", "sets"]
+  },
+  { 
+    sentence: "I prefer spending time with another people.", 
+    errorWord: "another", 
+    correctAnswer: "other"
+  },
+  { 
+    sentence: "I usually visit my family in Christmas.", 
+    errorWord: "in", 
+    correctAnswer: "at"
+  },
+  { 
+    sentence: "Tim’s not as taller as me.", 
+    errorWord: "taller", 
+    correctAnswer: "tall"
+  },
+  { 
+    sentence: "It’s one of the safest city in the world.", 
+    errorWord: "city", 
+    correctAnswer: "cities"
+  },
+  { 
+    sentence: "How many time do you need?", 
+    errorWord: "many", 
+    correctAnswer: "much"
+  },
+  { 
+    sentence: "I'm watching a great serie at the moment.", 
+    errorWord: "serie", 
+    correctAnswer: "series"
   }
+];
 ];
 
 const game = new SpanglishFixitGame(sentences);
