@@ -180,6 +180,18 @@ class SpanglishFixitGame {
             background: red;
             transition: width 1s linear;
         }
+        /* End-game text styles */
+        .game-over {
+            font-size: 24px;
+            color: #FF4500;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .new-high {
+            font-size: 20px;
+            color: #FFD700;
+            font-weight: bold;
+        }
     </style>
     <!-- Instructions Overlay -->
     <div id="instructions-overlay">
@@ -427,19 +439,27 @@ class SpanglishFixitGame {
             newHighScore = true;
         }
         this.updateBestScoreDisplay();
-        document.getElementById("feedback").textContent = `Game Over! Final Score: ${this.score}` + (newHighScore ? " - New High Score!" : "");
+        // Build a "Game Over" message similar to the Adjective game
+        let endMessage = `<div class="game-over">Game Over!</div>
+                          <div>Your score: ${this.score}</div>`;
+        if (newHighScore) {
+            endMessage += `<div class="new-high">New High Score!</div>`;
+        }
+        // Replace the last sentence with the end message
+        document.getElementById("sentence").innerHTML = endMessage;
+        // Hide the answer input and reset the points bar
+        document.getElementById("answer").style.display = "none";
+        document.getElementById("points-bar").style.width = "0%";
+        // Show the restart button
         document.getElementById("restart").style.display = "block";
-        if (this.wrongAnswers.length > 0) {
-            document.getElementById("review").style.display = "block";
-            let downloadBtn = document.getElementById("downloadReport");
-            if (!downloadBtn) {
-                downloadBtn = document.createElement("button");
-                downloadBtn.id = "downloadReport";
-                downloadBtn.textContent = "Download Report";
-                document.getElementById("game-container").appendChild(downloadBtn);
-                downloadBtn.addEventListener("click", () => this.downloadReport());
-            } else {
-                downloadBtn.style.display = "block";
+        // Show review button if there are mistakes, and show download report button if present
+        document.getElementById("review").style.display = this.wrongAnswers.length > 0 ? "block" : "none";
+        const reportButton = document.getElementById("downloadReport");
+        if (reportButton) {
+            reportButton.style.display = "block";
+            if (!reportButton.dataset.listenerAdded) {
+                reportButton.addEventListener("click", () => this.downloadReport());
+                reportButton.dataset.listenerAdded = "true";
             }
         }
     }
