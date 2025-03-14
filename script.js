@@ -51,7 +51,6 @@ class SpanglishFixitGame {
         this.startReview = this.startReview.bind(this);
         this.setupInputListener = this.setupInputListener.bind(this);
 
-        // We will use the prototype version for restartGame()
         this.initUI();
     }
 
@@ -135,6 +134,9 @@ class SpanglishFixitGame {
             border: none;
             outline: none;
             text-align: center;
+            display: block;
+            margin: 10px auto;
+            width: 80%;
         }
         input.correct {
             border: 2px solid #00FF00;
@@ -209,6 +211,7 @@ class SpanglishFixitGame {
         <input type="text" id="answer" autofocus>
         <p id="feedback"></p>
         <p>Score: <span id="score">0</span></p>
+        <p>Best Score: <span id="bestScore">0</span></p>
         <button id="start">Start Game</button>
         <button id="restart">Restart</button>
         <button id="review">Review Mistakes</button>
@@ -221,6 +224,12 @@ class SpanglishFixitGame {
         document.getElementById("restart").addEventListener("click", () => this.restartGame());
         document.getElementById("review").addEventListener("click", () => this.startReview());
         this.setupInputListener();
+        this.updateBestScoreDisplay();
+    }
+
+    updateBestScoreDisplay() {
+        let storedBest = localStorage.getItem("bestScoreSpanglish") || 0;
+        document.getElementById("bestScore").textContent = storedBest;
     }
 
     updateSentence() {
@@ -410,7 +419,15 @@ class SpanglishFixitGame {
     endGame() {
         this.gameActive = false;
         if (this.pointsInterval) clearInterval(this.pointsInterval);
-        document.getElementById("feedback").textContent = `Game Over! Final Score: ${this.score}`;
+        // Check and update best score using localStorage
+        let storedBest = localStorage.getItem("bestScoreSpanglish") || 0;
+        let newHighScore = false;
+        if (this.score > storedBest) {
+            localStorage.setItem("bestScoreSpanglish", this.score);
+            newHighScore = true;
+        }
+        this.updateBestScoreDisplay();
+        document.getElementById("feedback").textContent = `Game Over! Final Score: ${this.score}` + (newHighScore ? " - New High Score!" : "");
         document.getElementById("restart").style.display = "block";
         if (this.wrongAnswers.length > 0) {
             document.getElementById("review").style.display = "block";
@@ -489,9 +506,9 @@ const sentences = [
         correctAnswer: "boring"
     },
     { 
-        sentence: "Actually, I’m working in a travel agent’s.", 
+        sentence: "She usually lives with her friends, but actually, she's staying with her mum while she recovers.", 
         errorWord: "actually",
-        correctAnswer: "currently"
+        correctAnswer: ["currently", "at the moment"]
     },
     { 
         sentence: "Don’t shout at him. He’s very sensible.", 
@@ -669,196 +686,195 @@ const sentences = [
         correctAnswer: "beat"
     },
     {
-    sentence: "I’ll have a shower before go out.",
-    errorWord: "go",
-    correctAnswer: "going"
-  },
-  {
-    sentence: "Sarah doesn’t think he’s coming today but I think yes.",
-    errorWord: "yes",
-    correctAnswer: "so"
-  },
-  {
-    sentence: "For a long and healthy life, it’s important to practise sport regularly.",
-    errorWord: "practise",
-    correctAnswer: "do"
-  },
-  {
-    sentence: "The factory needs to contract more staff over the summer.",
-    errorWord: "contract",
-    correctAnswer: ["hire", "employ", "take on"]
-  },
-  {
-    sentence: "I’ve never been in London, but I would really like to go.",
-    errorWord: "in",
-    correctAnswer: "to"
-  },
-  {
-    sentence: "Don’t put attention to anything they say.",
-    errorWord: "put",
-    correctAnswer: "pay"
-  },
-  {
-    sentence: "He’s talking with the phone right now.",
-    errorWord: "with",
-    correctAnswer: "on"
-  },
-  {
-    sentence: "The flight was cancelled for the weather.",
-    errorWord: "for",
-    correctAnswer: ["because of", "due to"]
-  },
-  {
-    sentence: "I have known them since seven years.",
-    errorWord: "since",
-    correctAnswer: "for"
-  },
-  {
-    sentence: "I don’t know how it is called.",
-    errorWord: "how",
-    correctAnswer: "what"
-  },
-  {
-    sentence: "I have a doubt about this.",
-    errorWord: "doubt",
-    correctAnswer: "question"
-  },
-  {
-    sentence: "I have a lot of homeworks.",
-    errorWord: "homeworks",
-    correctAnswer: "homework"
-  },
-  {
-    sentence: "She’s very good in maths.",
-    errorWord: "in",
-    correctAnswer: "at"
-  },
-  {
-    sentence: "They remembered me of my cousins.",
-    errorWord: "remembered",
-    correctAnswer: "reminded"
-  },
-  {
-    sentence: "She’s married with an Ethiopian man.",
-    errorWord: "with",
-    correctAnswer: "to"
-  },
-  {
-    sentence: "I like going to a disco at the weekend.",
-    errorWord: "disco",
-    correctAnswer: "club"
-  },
-  {
-    sentence: "He’s so educated. He always treats everybody with a lot of respect.",
-    errorWord: "educated",
-    correctAnswer: "polite"
-  },
-  {
-    sentence: "He needs to go to university because he pretends to be a doctor.",
-    errorWord: "pretends",
-    correctAnswer: ["intends", "wants", "hopes"]
-  },
-  {
-    sentence: "The noise from the neighbour’s house is molesting me.",
-    errorWord: "molesting",
-    correctAnswer: ["bothering", "annoying", "disturbing"]
-  },
-  {
-    sentence: "I liked the movie, but it was a little large for me.",
-    errorWord: "large",
-    correctAnswer: "long"
-  },
-  {
-    sentence: "He got a great punctuation in the game.",
-    errorWord: "punctuation",
-    correctAnswer: "score"
-  },
-  {
-    sentence: "Can you borrow me your pen?",
-    errorWord: "borrow",
-    correctAnswer: "lend"
-  },
-  {
-    sentence: "She works as a commercial in a bank.",
-    errorWord: "commercial",
-    correctAnswer: ["saleswoman", "salesperson"]
-  },
-  {
-    sentence: "They said me to wait here.",
-    errorWord: "said",
-    correctAnswer: "told"
-  },
-  {
-    sentence: "They all agreed that rock-climbing would be more funny.",
-    errorWord: "funny",
-    correctAnswer: "fun"
-  },
-  {
-    sentence: "Did you know that Jane is going to make a party on Friday?",
-    errorWord: "make",
-    correctAnswer: "have"
-  },
-  { 
-    sentence: "There’s plenty more soap if you’re still hungry.", 
-    errorWord: "soap", 
-    correctAnswer: "soup"
-  },
-  { 
-    sentence: "We knew each other in 1996.", 
-    errorWord: "knew", 
-    correctAnswer: "met"
-  },
-  { 
-    sentence: "I lived in Japan during three years.", 
-    errorWord: "during", 
-    correctAnswer: "for"
-  },
-  { 
-    sentence: "I have two brothers, María and Juan.", 
-    errorWord: "brothers", 
-    correctAnswer: "siblings"
-  },
-  { 
-    sentence: "Jane works very hardly. She’s a workaholic.", 
-    errorWord: "hardly", 
-    correctAnswer: "hard"
-  },
-  { 
-    sentence: "Our teacher puts us too much homework.", 
-    errorWord: "puts", 
-    correctAnswer: ["gives", "sets"]
-  },
-  { 
-    sentence: "I prefer spending time with another people.", 
-    errorWord: "another", 
-    correctAnswer: "other"
-  },
-  { 
-    sentence: "I usually visit my family in Christmas.", 
-    errorWord: "in", 
-    correctAnswer: "at"
-  },
-  { 
-    sentence: "Tim’s not as taller as me.", 
-    errorWord: "taller", 
-    correctAnswer: "tall"
-  },
-  { 
-    sentence: "It’s one of the safest city in the world.", 
-    errorWord: "city", 
-    correctAnswer: "cities"
-  },
-  { 
-    sentence: "How many time do you need?", 
-    errorWord: "many", 
-    correctAnswer: "much"
-  },
-  { 
-    sentence: "I'm watching a great serie at the moment.", 
-    errorWord: "serie", 
-    correctAnswer: "series"
-  }
-];
+        sentence: "I’ll have a shower before go out.",
+        errorWord: "go",
+        correctAnswer: "going"
+    },
+    {
+        sentence: "Sarah doesn’t think he’s coming today but I think yes.",
+        errorWord: "yes",
+        correctAnswer: "so"
+    },
+    {
+        sentence: "For a long and healthy life, it’s important to practise sport regularly.",
+        errorWord: "practise",
+        correctAnswer: "do"
+    },
+    {
+        sentence: "The factory needs to contract more staff over the summer.",
+        errorWord: "contract",
+        correctAnswer: ["hire", "employ", "take on"]
+    },
+    {
+        sentence: "I’ve never been in London, but I would really like to go.",
+        errorWord: "in",
+        correctAnswer: "to"
+    },
+    {
+        sentence: "Don’t put attention to anything they say.",
+        errorWord: "put",
+        correctAnswer: "pay"
+    },
+    {
+        sentence: "He’s talking with the phone right now.",
+        errorWord: "with",
+        correctAnswer: "on"
+    },
+    {
+        sentence: "The flight was cancelled for the weather.",
+        errorWord: "for",
+        correctAnswer: ["because of", "due to"]
+    },
+    {
+        sentence: "I have known them since seven years.",
+        errorWord: "since",
+        correctAnswer: "for"
+    },
+    {
+        sentence: "I don’t know how it is called.",
+        errorWord: "how",
+        correctAnswer: "what"
+    },
+    {
+        sentence: "I have a doubt about this.",
+        errorWord: "doubt",
+        correctAnswer: "question"
+    },
+    {
+        sentence: "I have a lot of homeworks.",
+        errorWord: "homeworks",
+        correctAnswer: "homework"
+    },
+    {
+        sentence: "She’s very good in maths.",
+        errorWord: "in",
+        correctAnswer: "at"
+    },
+    {
+        sentence: "They remembered me of my cousins.",
+        errorWord: "remembered",
+        correctAnswer: "reminded"
+    },
+    {
+        sentence: "She’s married with an Ethiopian man.",
+        errorWord: "with",
+        correctAnswer: "to"
+    },
+    {
+        sentence: "I like going to a disco at the weekend.",
+        errorWord: "disco",
+        correctAnswer: "club"
+    },
+    {
+        sentence: "He’s so educated. He always treats everybody with a lot of respect.",
+        errorWord: "educated",
+        correctAnswer: "polite"
+    },
+    {
+        sentence: "He needs to go to university because he pretends to be a doctor.",
+        errorWord: "pretends",
+        correctAnswer: ["intends", "wants", "hopes"]
+    },
+    {
+        sentence: "The noise from the neighbour’s house is molesting me.",
+        errorWord: "molesting",
+        correctAnswer: ["bothering", "annoying", "disturbing", "irritating"]
+    },
+    {
+        sentence: "I liked the movie, but it was a little large for me.",
+        errorWord: "large",
+        correctAnswer: "long"
+    },
+    {
+        sentence: "He got a great punctuation in the game.",
+        errorWord: "punctuation",
+        correctAnswer: "score"
+    },
+    {
+        sentence: "Can you borrow me your pen?",
+        errorWord: "borrow",
+        correctAnswer: "lend"
+    },
+    {
+        sentence: "She works as a commercial in a bank.",
+        errorWord: "commercial",
+        correctAnswer: ["saleswoman", "salesperson"]
+    },
+    {
+        sentence: "They said me to wait here.",
+        errorWord: "said",
+        correctAnswer: "told"
+    },
+    {
+        sentence: "They all agreed that rock-climbing would be more funny.",
+        errorWord: "funny",
+        correctAnswer: "fun"
+    },
+    {
+        sentence: "Did you know that Jane is going to make a party on Friday?",
+        errorWord: "make",
+        correctAnswer: "have"
+    },
+    { 
+        sentence: "There’s plenty more soap if you’re still hungry.", 
+        errorWord: "soap", 
+        correctAnswer: "soup"
+    },
+    { 
+        sentence: "We knew each other in 1996.", 
+        errorWord: "knew", 
+        correctAnswer: "met"
+    },
+    { 
+        sentence: "I lived in Japan during three years.", 
+        errorWord: "during", 
+        correctAnswer: "for"
+    },
+    { 
+        sentence: "I have two brothers, María and Juan.", 
+        errorWord: "brothers", 
+        correctAnswer: "siblings"
+    },
+    { 
+        sentence: "Jane works very hardly. She’s a workaholic.", 
+        errorWord: "hardly", 
+        correctAnswer: "hard"
+    },
+    { 
+        sentence: "Our teacher puts us too much homework.", 
+        errorWord: "puts", 
+        correctAnswer: ["gives", "sets"]
+    },
+    { 
+        sentence: "I prefer spending time with another people.", 
+        errorWord: "another", 
+        correctAnswer: "other"
+    },
+    { 
+        sentence: "I usually visit my family in Christmas.", 
+        errorWord: "in", 
+        correctAnswer: "at"
+    },
+    { 
+        sentence: "Tim’s not as taller as me.", 
+        errorWord: "taller", 
+        correctAnswer: "tall"
+    },
+    { 
+        sentence: "It’s one of the safest city in the world.", 
+        errorWord: "city", 
+        correctAnswer: "cities"
+    },
+    { 
+        sentence: "How many time do you need?", 
+        errorWord: "many", 
+        correctAnswer: "much"
+    },
+    { 
+        sentence: "I'm watching a great serie at the moment.", 
+        errorWord: "serie", 
+        correctAnswer: "series"
+    }
 ];
 
 const game = new SpanglishFixitGame(sentences);
