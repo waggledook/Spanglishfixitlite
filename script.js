@@ -30,13 +30,17 @@ class SpanglishFixitGame {
         };
 
         this.startReview = () => {
-            if (this.wrongAnswers.length === 0) return;
-            this.reviewMode = true;
-            this.currentIndex = 0;
-            // Hide the Review button when entering review mode:
-            document.getElementById("review").style.display = "none";
-            this.updateSentence();
-        };
+    if (this.wrongAnswers.length === 0) return;
+    this.reviewMode = true;
+    this.currentIndex = 0;
+    
+    // Re-show the answer input for review:
+    document.getElementById("answer").style.display = "block";
+    
+    // Hide the Review button when entering review mode:
+    document.getElementById("review").style.display = "none";
+    this.updateSentence();
+};
 
         this.setupInputListener = () => {
             document.getElementById("answer").addEventListener("keyup", (event) => {
@@ -227,6 +231,7 @@ class SpanglishFixitGame {
         <button id="start">Start Game</button>
         <button id="restart">Restart</button>
         <button id="review">Review Mistakes</button>
+        <button id="downloadReport" style="display: none;">Download Report</button>
     </div>
 `;
         document.getElementById("close-instructions").addEventListener("click", () => {
@@ -245,37 +250,53 @@ class SpanglishFixitGame {
     }
 
     updateSentence() {
-        // End game after 15 sentences
+    if (this.reviewMode) {
+        // In review mode, use the length of wrongAnswers
+        if (this.currentIndex >= this.wrongAnswers.length) {
+            document.getElementById("sentence").innerHTML = "Review complete!";
+            document.getElementById("answer").style.display = "none";
+            document.getElementById("feedback").textContent = "";
+            this.reviewMode = false;
+            return;
+        }
+        document.getElementById("counter").textContent = `Review: ${this.currentIndex + 1}/${this.wrongAnswers.length}`;
+    } else {
+        // Normal game mode: check against totalSentences
         if (this.currentIndex >= this.totalSentences) {
             this.endGame();
             return;
         }
-        // Update sentence counter
         document.getElementById("counter").textContent = `Sentence: ${this.currentIndex + 1}/${this.totalSentences}`;
-        const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
-        const currentSentence = currentSet[this.currentIndex];
-        const sentenceParts = currentSentence.sentence.split(" ");
-        let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
-        document.getElementById("sentence").innerHTML = sentenceHTML;
-        // Re-enable clicking for new sentence
-        document.getElementById("sentence").style.pointerEvents = "auto";
-        // Start the 30-second phase timer for scoring (max 100 points, min 10)
-        this.startClickTime = Date.now();
-        if (this.pointsInterval) clearInterval(this.pointsInterval);
-        this.pointsInterval = setInterval(() => {
-            let elapsed = Date.now() - this.startClickTime;
-            let availablePoints = Math.max(100 - Math.floor(elapsed / 300), 10);
-            let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
-            document.getElementById("points-bar").style.width = percentage + "%";
-        }, 100);
-        // Attach click listeners to each word
-        const clickableWords = document.querySelectorAll(".clickable-word");
-        clickableWords.forEach((wordElement) => {
-            wordElement.addEventListener("click", () => {
-                this.handleWordClick(wordElement, currentSentence);
-            });
-        });
     }
+    
+    const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
+    const currentSentence = currentSet[this.currentIndex];
+    const sentenceParts = currentSentence.sentence.split(" ");
+    let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
+    document.getElementById("sentence").innerHTML = sentenceHTML;
+    
+    // Re-enable clicking for new sentence
+    document.getElementById("sentence").style.pointerEvents = "auto";
+    
+    // Start the 30-second phase timer for scoring (max 100 points, min 10)
+    this.startClickTime = Date.now();
+    if (this.pointsInterval) clearInterval(this.pointsInterval);
+    this.pointsInterval = setInterval(() => {
+        let elapsed = Date.now() - this.startClickTime;
+        let availablePoints = Math.max(100 - Math.floor(elapsed / 300), 10);
+        let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
+        document.getElementById("points-bar").style.width = percentage + "%";
+    }, 100);
+    
+    // Attach click listeners to each word
+    const clickableWords = document.querySelectorAll(".clickable-word");
+    clickableWords.forEach((wordElement) => {
+        wordElement.addEventListener("click", () => {
+            this.handleWordClick(wordElement, currentSentence);
+        });
+    });
+}
+
 
     handleWordClick(wordElement, currentSentence) {
         if (this.pointsInterval) {
@@ -464,23 +485,25 @@ class SpanglishFixitGame {
         }
     }
 
-    restartGame() {
-        this.gameActive = false;
-        this.reviewMode = false;
-        if (this.pointsInterval) clearInterval(this.pointsInterval);
-        this.currentIndex = 0;
-        this.score = 0;
-        this.wrongAnswers = [];
-        this.sentences = this.shuffle([...this.originalSentences]);
-        document.getElementById("score").textContent = this.score;
-        document.getElementById("feedback").textContent = "";
-        document.getElementById("sentence").textContent = "";
-        document.getElementById("answer").value = "";
-        document.getElementById("counter").textContent = "Sentence: 0/15";
-        document.getElementById("review").style.display = "none";
-        document.getElementById("restart").style.display = "none";
-        document.getElementById("start").style.display = "block";
-    }
+restartGame() {
+    this.gameActive = false;
+    this.reviewMode = false;
+    if (this.pointsInterval) clearInterval(this.pointsInterval);
+    this.currentIndex = 0;
+    this.score = 0;
+    this.wrongAnswers = [];
+    this.sentences = this.shuffle([...this.originalSentences]);
+    document.getElementById("score").textContent = this.score;
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("sentence").textContent = "";
+    document.getElementById("answer").value = "";
+    // Re-show the answer input:
+    document.getElementById("answer").style.display = "block";
+    document.getElementById("counter").textContent = "Sentence: 0/15";
+    document.getElementById("review").style.display = "none";
+    document.getElementById("restart").style.display = "none";
+    document.getElementById("start").style.display = "block";
+}
 
     downloadReport() {
         let report = "Mistakes Report\n\n";
