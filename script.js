@@ -223,7 +223,7 @@ class SpanglishFixitGame {
             <div id="points-bar" style="width: 100%; height: 100%; background: #0f0; transition: width 0.1s linear;"></div>
         </div>
         <p id="sentence"></p>
-        <p>Click the error and type the correction:</p>
+        <p id="instructionsText">Click the error and type the correction:</p>
         <input type="text" id="answer" autofocus>
         <p id="feedback"></p>
         <p>Score: <span id="score">0</span></p>
@@ -450,40 +450,55 @@ class SpanglishFixitGame {
     // No overall timer now, so startTimer() is removed.
 
     endGame() {
-        this.gameActive = false;
-        if (this.pointsInterval) clearInterval(this.pointsInterval);
-        // Check and update best score using localStorage
-        let storedBest = localStorage.getItem("bestScoreSpanglish") || 0;
-        let newHighScore = false;
-        if (this.score > storedBest) {
-            localStorage.setItem("bestScoreSpanglish", this.score);
-            newHighScore = true;
-        }
-        this.updateBestScoreDisplay();
-        // Build a "Game Over" message similar to the Adjective game
-        let endMessage = `<div class="game-over">Game Over!</div>
-                          <div>Your score: ${this.score}</div>`;
-        if (newHighScore) {
-            endMessage += `<div class="new-high">New High Score!</div>`;
-        }
-        // Replace the last sentence with the end message
-        document.getElementById("sentence").innerHTML = endMessage;
-        // Hide the answer input and reset the points bar
-        document.getElementById("answer").style.display = "none";
-        document.getElementById("points-bar").style.width = "0%";
-        // Show the restart button
-        document.getElementById("restart").style.display = "block";
-        // Show review button if there are mistakes, and show download report button if present
-        document.getElementById("review").style.display = this.wrongAnswers.length > 0 ? "block" : "none";
-        const reportButton = document.getElementById("downloadReport");
-        if (reportButton) {
-            reportButton.style.display = "block";
-            if (!reportButton.dataset.listenerAdded) {
-                reportButton.addEventListener("click", () => this.downloadReport());
-                reportButton.dataset.listenerAdded = "true";
-            }
+    this.gameActive = false;
+    if (this.pointsInterval) clearInterval(this.pointsInterval);
+
+    // Check and update best score using localStorage
+    let storedBest = localStorage.getItem("bestScoreSpanglish") || 0;
+    let newHighScore = false;
+    if (this.score > storedBest) {
+        localStorage.setItem("bestScoreSpanglish", this.score);
+        newHighScore = true;
+    }
+    this.updateBestScoreDisplay();
+
+    // Build a "Game Over" message
+    let endMessage = `
+        <div class="game-over">Game Over!</div>
+        <div>Your score: ${this.score}</div>
+    `;
+    if (newHighScore) {
+        endMessage += `<div class="new-high">New High Score!</div>`;
+    }
+
+    // Replace the last sentence with the end message
+    document.getElementById("sentence").innerHTML = endMessage;
+
+    // Hide the instructions paragraph and clear leftover feedback
+    document.getElementById("instructionsText").style.display = "none";
+    document.getElementById("feedback").textContent = "";
+
+    // Hide the answer input and reset the points bar
+    document.getElementById("answer").style.display = "none";
+    document.getElementById("points-bar").style.width = "0%";
+
+    // Show the restart button
+    document.getElementById("restart").style.display = "block";
+
+    // Show review button if there are mistakes
+    document.getElementById("review").style.display = this.wrongAnswers.length > 0 ? "block" : "none";
+
+    // Show the download report button if present
+    const reportButton = document.getElementById("downloadReport");
+    if (reportButton) {
+        reportButton.style.display = "block";
+        // Only attach the click listener once
+        if (!reportButton.dataset.listenerAdded) {
+            reportButton.addEventListener("click", () => this.downloadReport());
+            reportButton.dataset.listenerAdded = "true";
         }
     }
+}
 
 restartGame() {
     this.gameActive = false;
@@ -493,17 +508,25 @@ restartGame() {
     this.score = 0;
     this.wrongAnswers = [];
     this.sentences = this.shuffle([...this.originalSentences]);
+
     document.getElementById("score").textContent = this.score;
     document.getElementById("feedback").textContent = "";
     document.getElementById("sentence").textContent = "";
     document.getElementById("answer").value = "";
-    // Re-show the answer input:
+
+    // Re-show the answer input
     document.getElementById("answer").style.display = "block";
+
+    // Re-show instructions paragraph
+    document.getElementById("instructionsText").style.display = "block";
+
+    // Reset counters, hide review, hide restart, show start
     document.getElementById("counter").textContent = "Sentence: 0/15";
     document.getElementById("review").style.display = "none";
     document.getElementById("restart").style.display = "none";
     document.getElementById("start").style.display = "block";
 }
+
 
     downloadReport() {
         let report = "Mistakes Report\n\n";
