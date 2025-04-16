@@ -1,12 +1,12 @@
 class SpanglishFixitGame {
     constructor(sentences) {
         this.originalSentences = sentences;
-        this.sentences = this.shuffle([...sentences]);
-        this.currentIndex = 0;
-        this.score = 0;
-        this.wrongAnswers = [];
-        this.totalSentences = 15; // Each game has 15 sentences.
-        this.interval = null;
+    this.totalSentences       = 15; // Each game has 15 sentences.
+    this.sentences            = this.shuffle([...sentences]).slice(0, this.totalSentences);
+    this.currentIndex         = 0;
+    this.score                = 0;
+    this.wrongAnswers         = [];
+    this.interval             = null;
         this.gameActive = false;
         this.reviewMode = false;
         this.currentErrorWord = null; // Track the selected error word
@@ -64,6 +64,19 @@ class SpanglishFixitGame {
 
     initUI() {
         console.log("Game script is running!");
+        // Load jsPDF and AutoTable so downloadReport() can use them
+function loadScript(url, cb) {
+    const s = document.createElement("script");
+    s.src = url;
+    s.onload = cb;
+    document.head.appendChild(s);
+  }
+  loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => {
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js", () => {
+      console.log("jsPDF + AutoTable ready!");
+    });
+  });
+  
         document.title = "Spanglish Fixit Challenge";
         document.body.innerHTML = `
     <style>
@@ -163,20 +176,60 @@ class SpanglishFixitGame {
         button:hover {
             opacity: 0.8;
         }
-        #start {
-            background: #28a745;
-            color: white;
-        }
-        #restart {
-            background: #007bff;
-            color: white;
-            display: none;
-        }
-        #review {
-            background: #ffc107;
-            color: black;
-            display: none;
-        }
+        /* Start Button */
+#start {
+  background: linear-gradient(135deg, #32CD32, #228B22);
+  color: white;
+}
+#start:hover {
+  background: linear-gradient(135deg, #228B22, #32CD32);
+  transform: translateY(-2px);
+}
+#start:active {
+  transform: translateY(1px);
+}
+
+/* Restart Button */
+#restart {
+  background: linear-gradient(135deg, #339AF0, #1C7ED6);
+  color: white;
+  display: none;
+}
+#restart:hover {
+  background: linear-gradient(135deg, #1C7ED6, #339AF0);
+  transform: translateY(-2px);
+}
+#restart:active {
+  transform: translateY(1px);
+}
+
+/* Review Button */
+#review {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: black;
+  display: none;
+}
+#review:hover {
+  background: linear-gradient(135deg, #FFA500, #FFD700);
+  transform: translateY(-2px);
+}
+#review:active {
+  transform: translateY(1px);
+}
+  /* Download Report Button */
+#downloadReport {
+  background: linear-gradient(135deg, #FF857A, #FF5E57);
+  color: white;
+  display: none;
+  margin-top: 20px; /* match your other games */
+}
+#downloadReport:hover {
+  background: linear-gradient(135deg, #FF5E57, #FF857A);
+  transform: translateY(-2px);
+}
+#downloadReport:active {
+  transform: translateY(1px);
+}
         /* Timer bar (points bar) */
         #timer-bar {
             width: 100%;
@@ -215,7 +268,12 @@ class SpanglishFixitGame {
     </div>
     <!-- Game Container -->
     <div id="game-container">
-        <h1>Spanglish Fixit Challenge</h1>
+        <img
+  id="titleImage"
+  src="images/Spanglish-title.png"
+  alt="Spanglish Fixit"
+  style="display:block;max-width:300px;margin:0 auto 20px;"
+/>
         <!-- Sentence counter -->
         <p id="counter">Sentence: 0/15</p>
         <!-- Points bar container -->
@@ -298,15 +356,24 @@ class SpanglishFixitGame {
 }
 
 
-    handleWordClick(wordElement, currentSentence) {
-        if (this.pointsInterval) {
-            clearInterval(this.pointsInterval);
-            this.pointsInterval = null;
-        }
-        const clickedWord = wordElement.textContent;
-        const cleanedClickedWord = clickedWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
-        const cleanedErrorWord = currentSentence.errorWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
-        const clickTime = Date.now() - this.startClickTime;
+handleWordClick(wordElement, currentSentence) {
+    if (this.pointsInterval) {
+        clearInterval(this.pointsInterval);
+        this.pointsInterval = null;
+    }
+    const clickedWord = wordElement.textContent;
+    // ─── RECORD CLICKED WORD FOR REPORT ───────────────────────────────────
+    currentSentence.clickedWord = clickedWord;
+    // ─────────────────────────────────────────────────────────────────────
+    const cleanedClickedWord = clickedWord
+        .replace(/[^\w\s]|_/g, "")
+        .trim()
+        .toLowerCase();
+    const cleanedErrorWord = currentSentence.errorWord
+        .replace(/[^\w\s]|_/g, "")
+        .trim()
+        .toLowerCase();
+    const clickTime = Date.now() - this.startClickTime;
         if (this.reviewMode) {
             // In review mode, simply highlight correct/incorrect and proceed
             if (cleanedClickedWord === cleanedErrorWord) {
@@ -387,6 +454,10 @@ class SpanglishFixitGame {
             possibleAnswers = [possibleAnswers];
         }
         possibleAnswers = possibleAnswers.map(answer => answer.toLowerCase());
+        // record what they typed
+        currentSentence.studentAnswer = userInput;
+        // record whether it was correct
+        currentSentence.wasCorrect    = possibleAnswers.includes(userInput);
         if (this.reviewMode) {
             if (possibleAnswers.includes(userInput)) {
                 input.classList.add("correct");
@@ -507,7 +578,7 @@ restartGame() {
     this.currentIndex = 0;
     this.score = 0;
     this.wrongAnswers = [];
-    this.sentences = this.shuffle([...this.originalSentences]);
+    this.sentences = this.shuffle([...this.originalSentences]).slice(0, this.totalSentences);
 
     document.getElementById("score").textContent = this.score;
     document.getElementById("feedback").textContent = "";
@@ -528,20 +599,71 @@ restartGame() {
 }
 
 
-    downloadReport() {
-        let report = "Mistakes Report\n\n";
-        this.wrongAnswers.forEach((item, index) => {
-            let correct = Array.isArray(item.correctAnswer) ? item.correctAnswer.join(" / ") : item.correctAnswer;
-            report += `Mistake ${index + 1}:\nSentence: ${item.sentence}\nError Word: ${item.errorWord}\nYour Answer: ${item.studentAnswer}\nCorrect Answer: ${correct}\n\n`;
-        });
-        const blob = new Blob([report], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "report.txt";
-        a.click();
-        URL.revokeObjectURL(url);
+downloadReport() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      return alert("PDF generator not loaded yet—please try again in a moment.");
     }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.setTextColor(0,0,150);
+    doc.text("Spanglish Fixit – Detailed Report", 14, 20);
+  
+    // build the rows WITHOUT the result column
+    const body = this.sentences.map((s, i) => {
+      const correct = Array.isArray(s.correctAnswer)
+        ? s.correctAnswer.join(" / ")
+        : s.correctAnswer;
+      return [
+        i + 1,
+        s.sentence,
+        s.errorWord,
+        s.clickedWord     || "—",
+        correct,
+        s.studentAnswer   || "—"
+      ];
+    });
+  
+    doc.autoTable({
+      startY: 30,
+      head: [["#", "Sentence", "Error", "Clicked", "Correct Answer", "Your Entry"]],
+      body,
+      headStyles: { fillColor: [41,128,185], textColor: 255 },
+      bodyStyles: { fontSize: 10, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [245,245,245] },
+      didParseCell: function(data) {
+        if (data.section !== 'body') return;
+  
+        // ─── Updated Clicked column (index 3) ────────────────────────────────
+  if (data.column.index === 3) {
+    // normalize clicked: lowercase, trim, remove punctuation
+    const clickedRaw  = String(data.cell.raw).toLowerCase().trim();
+    const clickedNorm = clickedRaw.replace(/[^\w\s]|_/g, "");
+
+    // normalize errorWord from column 2 in the same way
+    const errorRaw    = String(data.row.raw[2]).toLowerCase().trim();
+    const errorNorm   = errorRaw.replace(/[^\w\s]|_/g, "");
+
+    data.cell.styles.textColor = (clickedNorm === errorNorm)
+      ? [0,128,0]  // green
+      : [255,0,0]; // red
+  }
+  
+        // Your Entry column (index 5): green if one of the correct answers, else red
+        if (data.column.index === 5) {
+          const student    = String(data.cell.raw).toLowerCase().trim();
+          const correctRaw = String(data.row.raw[4]);
+          const possible   = correctRaw.split(" / ").map(a => a.toLowerCase().trim());
+          data.cell.styles.textColor = possible.includes(student)
+            ? [0,128,0]
+            : [255,0,0];
+        }
+      }
+    });
+  
+    doc.save("SpanglishFixit_Report.pdf");
+  }
+  
 }
 
 // Sample sentences for testing
