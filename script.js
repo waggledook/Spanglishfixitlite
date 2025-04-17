@@ -249,6 +249,52 @@ function loadScript(url, cb) {
             color: #FFD700;
             font-weight: bold;
         }
+            /* make the sentence text bigger and tappable */
+#sentence {
+  font-size: 1.5rem;   /* about 24px */
+  line-height: 1.4;
+}
+
+/* every word becomes a pill-shaped tappable target */
+.clickable-word {
+  display: inline-block;
+  padding: 2px 4px;
+  margin: 0;
+  font-size: 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.clickable-word:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* after click, we’ll add one of these classes: */
+.correct-bubble {
+  background-color: #28a745;
+  color: #fff;
+}
+.incorrect-bubble {
+  background-color: #e74c3c;
+  color: #fff;
+}
+/* keep game & host containers inside the viewport with a 20px buffer */
+@media (max-height: 700px) {
+  #game-container,
+  #host-container {
+    max-height: calc(100vh - 40px);  /* leaves 20px top + bottom */
+    overflow-y: auto;                /* scroll if content is taller */
+    margin: 20px auto;               /* reinforce the vertical buffer */
+  }
+}
+
+/* on very short devices, align to top so you don’t get awkward centering */
+@media (max-height: 500px) {
+  body {
+    justify-content: flex-start !important;
+    padding-top: 10px;
+  }
+}
     </style>
     <!-- Instructions Overlay -->
     <div id="instructions-overlay">
@@ -357,64 +403,61 @@ function loadScript(url, cb) {
 
 
 handleWordClick(wordElement, currentSentence) {
+    // stop the points countdown
     if (this.pointsInterval) {
-        clearInterval(this.pointsInterval);
-        this.pointsInterval = null;
+      clearInterval(this.pointsInterval);
+      this.pointsInterval = null;
     }
+  
+    // record the click
     const clickedWord = wordElement.textContent;
-    // ─── RECORD CLICKED WORD FOR REPORT ───────────────────────────────────
+    if (!this.reviewMode) {
+    // record only the first-click during normal play
     currentSentence.clickedWord = clickedWord;
-    // ─────────────────────────────────────────────────────────────────────
-    const cleanedClickedWord = clickedWord
-        .replace(/[^\w\s]|_/g, "")
-        .trim()
-        .toLowerCase();
-    const cleanedErrorWord = currentSentence.errorWord
-        .replace(/[^\w\s]|_/g, "")
-        .trim()
-        .toLowerCase();
-    const clickTime = Date.now() - this.startClickTime;
-        if (this.reviewMode) {
-            // In review mode, simply highlight correct/incorrect and proceed
-            if (cleanedClickedWord === cleanedErrorWord) {
-                wordElement.style.color = 'green';
-            } else {
-                wordElement.style.color = 'red';
-            }
-            const correctWordElements = document.querySelectorAll('.clickable-word');
-            correctWordElements.forEach((element) => {
-                if (element.textContent.replace(/[^\w\s]|_/g, "").trim().toLowerCase() === cleanedErrorWord) {
-                    element.style.color = 'green';
-                }
-            });
-            // Remove listeners so further clicks don’t register
-            document.getElementById("sentence").style.pointerEvents = "none";
-            this.selectErrorWord(clickedWord);
-            return;
-        }
-        // Normal game mode: update score based on click speed
-        if (cleanedClickedWord === cleanedErrorWord) {
-            let clickScore = Math.max(100 - Math.floor(clickTime / 300), 10);
-            this.score += clickScore;
-            wordElement.style.color = 'green';
-        } else {
-            this.score -= 50;
-            wordElement.style.color = 'red';
-            if (!this.wrongAnswers.includes(currentSentence)) {
-                this.wrongAnswers.push(currentSentence);
-            }
-        }
-        document.getElementById("score").textContent = this.score;
-        const correctWordElements = document.querySelectorAll('.clickable-word');
-        correctWordElements.forEach((element) => {
-            if (element.textContent.replace(/[^\w\s]|_/g, "").trim().toLowerCase() === cleanedErrorWord) {
-                element.style.color = 'green';
-            }
-        });
-        // Disable further clicks for this sentence
-        document.getElementById("sentence").style.pointerEvents = "none";
-        this.selectErrorWord(clickedWord);
+    } else {
+    // optional: record review clicks separately
+    currentSentence.reviewClickedWord = clickedWord;
     }
+  
+    // helper to normalize words
+    const clean = str =>
+      str.replace(/[^\w\s]|_/g, "")
+         .trim()
+         .toLowerCase();
+  
+    const isCorrect = clean(clickedWord) === clean(currentSentence.errorWord);
+  
+    // clear old bubbles
+    document.querySelectorAll(".clickable-word")
+      .forEach(el => el.classList.remove("correct-bubble", "incorrect-bubble"));
+  
+    // bubble the clicked word
+    wordElement.classList.add(isCorrect ? "correct-bubble" : "incorrect-bubble");
+  
+    // adjust score / record mistakes
+    if (isCorrect) {
+      const clickTime = Date.now() - this.startClickTime;
+      this.score += Math.max(100 - Math.floor(clickTime / 300), 10);
+    } else {
+      this.score -= 50;
+      if (!this.wrongAnswers.includes(currentSentence)) {
+        this.wrongAnswers.push(currentSentence);
+      }
+    }
+    document.getElementById("score").textContent = this.score;
+  
+    // highlight the true error word in green
+    document.querySelectorAll(".clickable-word")
+      .forEach(el => {
+        if (clean(el.textContent) === clean(currentSentence.errorWord)) {
+          el.classList.add("correct-bubble");
+        }
+      });
+  
+    // stop further clicks and move to typing correction
+    document.getElementById("sentence").style.pointerEvents = "none";
+    this.selectErrorWord(clickedWord);
+  }  
 
     selectErrorWord(word) {
         this.currentErrorWord = word;
@@ -454,10 +497,13 @@ handleWordClick(wordElement, currentSentence) {
             possibleAnswers = [possibleAnswers];
         }
         possibleAnswers = possibleAnswers.map(answer => answer.toLowerCase());
-        // record what they typed
-        currentSentence.studentAnswer = userInput;
-        // record whether it was correct
-        currentSentence.wasCorrect    = possibleAnswers.includes(userInput);
+        if (!this.reviewMode) {
+            currentSentence.studentAnswer = userInput;
+            currentSentence.wasCorrect    = possibleAnswers.includes(userInput);
+          } else {
+            currentSentence.reviewAnswer     = userInput;
+            currentSentence.reviewWasCorrect = possibleAnswers.includes(userInput);
+          }
         if (this.reviewMode) {
             if (possibleAnswers.includes(userInput)) {
                 input.classList.add("correct");
